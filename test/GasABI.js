@@ -1,5 +1,7 @@
 'use strict'
 
+const abi = require('ethereumjs-abi');
+
 contract('GasABI', () => {
   const GasABI = artifacts.require('./GasABI.sol')
   let gs
@@ -8,11 +10,19 @@ contract('GasABI', () => {
     gs = await GasABI.new()
   })
 
+  const abiEncodeTwoByteArrays = (a, b) => {
+    const values = [
+      new Buffer(a, "hex"),
+      new Buffer(b, "hex"),
+    ]
+    return abi.rawEncode(["bytes", "bytes"], values).toString("hex")
+  }
+
   describe('splitting arrays', () => {
-    const encoded = '0x000000000000000000000000000000000000000000000000000000000000004000000000000000000000000000000000000000000000000000000000000000800000000000000000000000000000000000000000000000000000000000000001310000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000013200000000000000000000000000000000000000000000000000000000000000';
+    const encoded = abiEncodeTwoByteArrays("31", "32")
 
     it('costs less than 300 gas to parse', async () => {
-      const tx1 = await gs.singleArray(encoded)
+      const tx1 = await gs.singleArray(`0x${encoded}`)
       const tx2 = await gs.doubleArray('0x31', '0x32')
       const rec1  = await web3.eth.getTransactionReceipt(tx1.tx)
       const rec2  = await web3.eth.getTransactionReceipt(tx2.tx)
